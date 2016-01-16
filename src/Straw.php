@@ -123,15 +123,17 @@ class Straw
      * @param string|null $default
      * @param string $pattern
      * @param string $delimiter
-     * @param bool $allow
+     * @param array $allow
      * @return Core\Rule
      */
     private static function registerList($key, $default, $pattern, $delimiter=null, $allow=null)
     {
         $filter = function ($input) use ($delimiter, $allow) {
             $values = explode($delimiter, $input);
-            if (! is_null($allow)) {
+            if (is_array($allow)) {
                 $values = array_map(function ($v) {return (int)$v;}, $values);
+            }
+            if ($allow) {
                 foreach ($values as $v) {
                     if ($v < $allow[0] || $allow[1] < $v) {
                         return null;
@@ -214,7 +216,7 @@ class Straw
      * @param array $allow
      * @return Core\Rule
      */
-    public static function num($key, $default=null, array $allow=null)
+    public static function num($key, $default=null, array $allow=array())
     {
         $pattern = static::pattern(static::$pattenrs['num']);
         $filter = function ($value) use ($allow) {
@@ -261,7 +263,7 @@ class Straw
      * @param array $allow
      * @return Core\Rule
      */
-    public static function numList($key, $default=null, array $allow=null)
+    public static function numList($key, $default=null, array $allow=array())
     {
         $pattern = static::patternList(static::$pattenrs['num'], static::$delimiters['list']);
         return static::registerList($key, $default, $pattern, static::$delimiters['list'], $allow);
@@ -301,7 +303,7 @@ class Straw
      * @param array $allow
      * @return Core\Rule
      */
-    public static function numSet($key, $default=null, array $allow=null)
+    public static function numSet($key, $default=null, array $allow=array())
     {
         $pattern = static::patternList(static::$pattenrs['num'], static::$delimiters['set']);
         return static::registerList($key, $default, $pattern, static::$delimiters['set'], $allow);

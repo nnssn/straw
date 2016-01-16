@@ -2,6 +2,9 @@ Straw
 ====
 Straw will make a bridge of query string\(URL parameter\) and output.
 
+## Demo
+[demo page](https://github.com/nnssn/straw/blob/master/demo/index.php)
+
 ## Requirement
 PHP 5.3.*
 

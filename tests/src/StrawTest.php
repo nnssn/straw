@@ -4,7 +4,27 @@ namespace Nnssn\Straw;
 
 class StrawTest extends \PHPUnit_Framework_TestCase
 {
-   /**
+    /**
+     * @covers Nnssn\Straw\Straw::options
+     * @test
+     */
+    public function 設定を変更()
+    {
+        $rule1  = Straw::alpha('test');
+        $value1 = $rule1('abc-def');
+
+        $options = array(
+            'alpha' => 'a-zA-Z-'
+        );
+        Straw::options($options);
+        $rule2  = Straw::alpha('test');
+        $value2 = $rule2('abc-def');
+
+        $this->assertNull($value1);
+        $this->assertNotNull($value2);
+    }
+
+    /**
      * @covers Nnssn\Straw\Straw::add
      * @test
      */

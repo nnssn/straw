@@ -29,6 +29,20 @@ class Straw
     protected static $rules = array();
 
     /**
+     * Set options
+     * 
+     * @param array $options
+     */
+    public static function options(array $options)
+    {
+        static::$pattenrs   = $options + static::$pattenrs;
+        static::$delimiters = $options + static::$delimiters;
+        if (isset($options['allow_alpha_subs'])) {
+            static::$allow_alpha_subs = $options['allow_alpha_subs'];
+        }
+    }
+
+    /**
      * Create Core\Maker instance
      * 
      * @return Core\Maker

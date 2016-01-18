@@ -5,6 +5,16 @@ namespace Nnssn\Straw;
 class StrawTest extends \PHPUnit_Framework_TestCase
 {
     /**
+     * @covers Nnssn\Straw\Straw::open
+     * @test
+     */
+    public function Makerインスタンスの生成()
+    {
+        $maker = Straw::open();
+        $this->assertInstanceOf('Nnssn\Straw\Core\Maker', $maker);
+    }
+
+    /**
      * @covers Nnssn\Straw\Straw::options
      * @test
      */
@@ -235,13 +245,15 @@ class StrawTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Nnssn\Straw\Straw::open
+     * @covers Nnssn\Straw\Straw::bool
      * @test
      */
-    public function Makerインスタンスの生成()
+    public function boolルールの登録()
     {
-        $maker = Straw::open();
-        $this->assertInstanceOf('Nnssn\Straw\Core\Maker', $maker);
+        $rule = Straw::bool('test', null);
+        $this->assertNotNull($rule(0));
+        $this->assertNotNull($rule(1));
+        $this->assertNull($rule(10));
+        $this->assertNull($rule('abc'));
     }
-
 }

@@ -210,6 +210,21 @@ class Straw
     }
 
     /**
+     * Add boolean rule
+     * 
+     * @param string $key
+     * @param string|null $default
+     * @return Core\Rule
+     */
+    public static function bool($key, $default=null)
+    {
+        $filter = function ($value) {
+            return (int)$value;
+        };
+        return static::register($key, $default, '/\A(0|1)\Z/', $filter);
+    }
+
+    /**
      * Add alpha rule
      * 
      * @param string $key

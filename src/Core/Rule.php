@@ -28,7 +28,7 @@ class Rule
     public function __construct($key, $default, $pattern, $filter)
     {
         $this->key     = $key;
-        $this->default = $default;
+        $this->default = ($default) ? (string)$default : null;
         $this->pattern = $pattern;
         $this->filter  = $filter;
     }
@@ -65,6 +65,7 @@ class Rule
      */
     public function __invoke($value)
     {
+        $value       = (string)$value;
         $res_input   = null;
         $res_default = null;
         if ($value || $value === '0') {
@@ -73,13 +74,13 @@ class Rule
         if (! $res_input && ($this->default || $this->default === '0')) {
             (preg_match($this->pattern, $this->default)) and ($res_default = $this->default);
         }
-        if (! $res_input && ! $res_default) {
+        if (is_null($res_input) && is_null($res_default)) {
             return null;
         }
 
         $use_value = ($res_input) ?: $res_default;
         $return_value = $this->patch($use_value);
-        if (! $return_value) {
+        if (is_null($return_value)) {
             return null;
         }
         return array(

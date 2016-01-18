@@ -12,10 +12,8 @@
 
 	<filter>
 		<whitelist>
-			<directory>./</directory>
+			<directory>./src</directory>
 			<exclude>
-				<directory>./tests</directory>
-				<directory>./vendor</directory>
 				<file>./src/autoload.php</file>
 				<file>./src/Manuals/Standard.php</file>
 			</exclude>

@@ -57,8 +57,12 @@ class RuleTest extends \PHPUnit_Framework_TestCase
      */
     public function invoke()
     {
-        $rule = $this->object;
-        $result = $rule(123);
-        $this->assertArrayHasKey('key', $result);
+        $rule   = $this->object;
+        $this->assertArrayHasKey('key', $rule(123));
+        $this->assertNull($rule(null));
+
+        $rule2   = new Rule('test', 123, '/\d+/', null);
+        $result2 = $rule2(null);
+        $this->assertEquals('123', $result2['value']);
     }
 }

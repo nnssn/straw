@@ -53,4 +53,81 @@ class MakerTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayNotHasKey('sort', $result['options']);
     }
 
+    /**
+     * @covers Nnssn\Straw\Core\Maker::source
+     * @covers Nnssn\Straw\Core\Maker::getInputValue
+     * @test
+     */
+    public function ソースを変更()
+    {
+        $source = array('test' => 'test');
+        $maker = new Maker;
+        $maker->source($source);
+        $ref = new \ReflectionClass($maker);
+
+        $property = $ref->getProperty('source');
+        $property->setAccessible(true);
+        $set_source = $property->getValue($maker);
+        $this->assertEquals($source, $set_source);
+
+        $method = $ref->getMethod('getInputValue');
+        $method->setAccessible(true);
+        $set_value = $method->invokeArgs($maker, array('test'));
+        $this->assertEquals('test', $set_value);
+    }
+
+    /**
+     * @covers Nnssn\Straw\Core\Maker::decideComplate
+     * @test
+     */
+    public function complateコールバックの取得()
+    {
+        $ref = new \ReflectionClass($this->object);
+        $method = $ref->getMethod('decideComplate');
+        $method->setAccessible(true);
+        $callback = $method->invoke($this->object);
+        $this->assertInternalType('callable', $callback);
+
+        $maker = new Maker;
+        $maker->complate(function ($data) {
+            return $data;
+        });
+        $ref = new \ReflectionClass($maker);
+
+        $method = $ref->getMethod('decideComplate');
+        $method->setAccessible(true);
+        $callback = $method->invoke($maker);
+        $this->assertInternalType('callable', $callback);
+    }
+
+    /**
+     * @covers Nnssn\Straw\Core\Maker::build
+     * @test
+     */
+    public function 結果配列の組み立て()
+    {
+        $datum = array(
+            array(
+                'key' => 'normal',
+                'value' => 'value',
+            ),
+            array(
+                'key' => 'array_put.',
+                'value' => 'value',
+            ),
+            array(
+                'key' => 'array.in',
+                'value' => 'value',
+            ),
+        );
+        $maker = new Maker;
+        $ref = new \ReflectionClass($maker);
+
+        $method = $ref->getMethod('build');
+        $method->setAccessible(true);
+        $result = $method->invokeArgs($maker, array($datum));
+        $this->assertArrayHasKey('normal', $result);
+        $this->assertArrayHasKey('array_put', $result);
+        $this->assertArrayHasKey('in', $result['array']);
+    }
 }

@@ -91,10 +91,7 @@ class Maker
      */
     private function getInputValue($key)
     {
-        static $source = null;
-        if (! $source) {
-            $source = ($this->source) ?: $this->manual->source();
-        }
+        $source = ($this->source) ?: $this->manual->source();
         return (isset($source[$key])) ? $source[$key] : null;
     }
 
@@ -108,10 +105,7 @@ class Maker
         if ($this->complate_callback) {
             return $this->complate_callback;
         }
-        if ($this->manual) {
-            return $this->manual->complate();
-        }
-        return null;
+        return $this->manual->complate();
     }
 
     /**

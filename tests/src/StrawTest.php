@@ -201,6 +201,7 @@ class StrawTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers Nnssn\Straw\Straw::datetimeRange
+     * @expectedException \RuntimeException
      * @test
      */
     public function 日時範囲ルールの登録()
@@ -214,6 +215,8 @@ class StrawTest extends \PHPUnit_Framework_TestCase
         $rule = Straw::datetimeRange('test', null, 'y.m.d');
         $this->assertNotNull($rule('16.01.01-16.01.15'));
         $this->assertNull($rule('160101-160115'));
+
+        $rule = Straw::datetimeRange('delimiter_hyphen', null, 'y-m-d');
     }
 
     /**

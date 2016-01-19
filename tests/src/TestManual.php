@@ -20,4 +20,11 @@ class TestManual extends Manual
 		Straw::num('sort')->to('options.sort');     //fail
 		Straw::num('order')->to('options.order');   //fail
 	}
+
+    public function complate()
+    {
+        return function ($data) {
+            return $data;
+        };
+    }
 }

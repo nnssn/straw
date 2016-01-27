@@ -20,6 +20,7 @@ class MakerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers Nnssn\Straw\Core\Maker::__construct
+     * @covers Nnssn\Straw\Core\Maker::readManual
      * @test
      */
     public function コンストラクタでマニュアルをセット()
@@ -77,13 +78,13 @@ class MakerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Nnssn\Straw\Core\Maker::decideComplate
+     * @covers Nnssn\Straw\Core\Maker::getComplate
      * @test
      */
     public function complateコールバックの取得()
     {
         $ref = new \ReflectionClass($this->object);
-        $method = $ref->getMethod('decideComplate');
+        $method = $ref->getMethod('getComplate');
         $method->setAccessible(true);
         $callback = $method->invoke($this->object);
         $this->assertInternalType('callable', $callback);
@@ -94,7 +95,7 @@ class MakerTest extends \PHPUnit_Framework_TestCase
         });
         $ref = new \ReflectionClass($maker);
 
-        $method = $ref->getMethod('decideComplate');
+        $method = $ref->getMethod('getComplate');
         $method->setAccessible(true);
         $callback = $method->invoke($maker);
         $this->assertInternalType('callable', $callback);

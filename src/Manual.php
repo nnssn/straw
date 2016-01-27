@@ -14,7 +14,7 @@ abstract class Manual
      */
 	public function source()
     {
-        return $_GET;
+        return null;
     }
 
     /**

@@ -4,7 +4,6 @@ namespace Nnssn\Straw\Core;
 
 use Nnssn\Straw\Straw;
 use Nnssn\Straw\Manual;
-use Nnssn\Straw\Manuals\Standard;
 
 /**
  * Creation of the array
@@ -13,11 +12,6 @@ use Nnssn\Straw\Manuals\Standard;
  */
 class Maker
 {
-    /**
-     * @var Manual
-     */
-    private $manual;
-
     /**
      * @var array
      */
@@ -35,8 +29,22 @@ class Maker
      */
     public function __construct(Manual $manual=null)
     {
-        $this->manual = ($manual) ?: new Standard;
-        $this->manual->rules();
+        ($manual) and ($this->readManual($manual));
+    }
+
+    /**
+     * Set rules, source, complate callback
+     * 
+     * @param Manual $manual
+     */
+    private function readManual(Manual $manual)
+    {
+        $source   = $manual->source();
+        $complate = $manual->complate();
+
+        $manual->rules();
+        ($source)   and ($this->source($source));
+        ($complate) and ($this->complate($complate));
     }
 
     /**
@@ -78,7 +86,7 @@ class Maker
             ($res) and ($sets[] = $res);
         }
         $data     = static::build($sets);
-        $complate = $this->decideComplate();
+        $complate = $this->getComplate();
         return ($complate) ? $complate($data) : $data;
     }
 
@@ -91,7 +99,7 @@ class Maker
      */
     private function getInputValue($key)
     {
-        $source = ($this->source) ?: $this->manual->source();
+        $source = ($this->source) ?: $_GET;
         return (isset($source[$key])) ? $source[$key] : null;
     }
 
@@ -100,12 +108,9 @@ class Maker
      * 
      * @return callable|null
      */
-    private function decideComplate()
+    private function getComplate()
     {
-        if ($this->complate_callback) {
-            return $this->complate_callback;
-        }
-        return $this->manual->complate();
+        return $this->complate_callback;
     }
 
     /**

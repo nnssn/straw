@@ -35,10 +35,10 @@ class Straw
      */
     public static function options(array $options)
     {
-        static::$pattenrs   = $options + static::$pattenrs;
-        static::$delimiters = $options + static::$delimiters;
+        self::$pattenrs   = $options + self::$pattenrs;
+        self::$delimiters = $options + self::$delimiters;
         if (isset($options['allow_alpha_subs'])) {
-            static::$allow_alpha_subs = $options['allow_alpha_subs'];
+            self::$allow_alpha_subs = $options['allow_alpha_subs'];
         }
     }
 
@@ -59,19 +59,41 @@ class Straw
      */
     public static function getRules()
     {
-        return static::$rules;
+        return self::$rules;
+    }
+
+    /**
+     * Normalize length array
+     * 
+     * @param mixed $length
+     * @return array
+     */
+    private static function repeat($length)
+    {
+        if (is_numeric($length)) {
+            return array($length, $length);
+        }
+        if (! is_array($length)) {
+            return array(1, '');
+        }
+        return array(
+            (isset($length[0]) && $length[0]) ? $length[0] : 1,
+            (isset($length[1]) && $length[1]) ? $length[1] : '',
+        );
     }
 
     /**
      * Make normal pattern
      * 
      * @param string $chars
+     * @param mixed $length
      * @return string
      */
-    private static function pattern($chars)
+    private static function pattern($chars, $length=null)
     {
-        $main = ($chars === static::$pattenrs['num']) ? $chars : $chars . static::$allow_alpha_subs;
-        return sprintf('/\A[%s]+\Z/', $main);
+        $main = ($chars === self::$pattenrs['num']) ? $chars : $chars . self::$allow_alpha_subs;
+        $repeat = self::repeat($length);
+        return sprintf('/\A[%s]{%s,%s}\Z/', $main, $repeat[0], $repeat[1]);
     }
 
     /**
@@ -80,13 +102,15 @@ class Straw
      * @param string $chars
      * @param string $delimiter
      * @param string $format
+     * @param mixed $length
      * @return string
      */
-    private static function patternMulti($chars, $delimiter, $format)
+    private static function patternMulti($chars, $delimiter, $format, $length=null)
     {
-        $main    = ($chars === static::$pattenrs['num']) ? $chars : $chars . static::$allow_alpha_subs;
-        $search  = array(':main', ':delimiter');
-        $replace = array($main, $delimiter);
+        $main    = ($chars === self::$pattenrs['num']) ? $chars : $chars . self::$allow_alpha_subs;
+        $repeat  = self::repeat($length);
+        $search  = array(':main', ':delimiter', ':min', ':max');
+        $replace = array($main, $delimiter, $repeat[0], $repeat[1]);
         return str_replace($search, $replace, $format);
     }
 
@@ -95,12 +119,13 @@ class Straw
      * 
      * @param string $chars
      * @param string $delimiter
+     * @param mixed $length
      * @return string
      */
-    private static function patternList($chars, $delimiter)
+    private static function patternList($chars, $delimiter, $length=null)
     {
-        $format = '/\A([:main]|:delimiter(?!:delimiter))*[:main]\Z/';
-        return static::patternMulti($chars, $delimiter, $format);
+        $format = '/\A([:main]{:min,:max}:delimiter(?!:delimiter))*[:main]{:min,:max}\Z/';
+        return self::patternMulti($chars, $delimiter, $format, $length);
     }
 
     /**
@@ -112,7 +137,7 @@ class Straw
     private static function patternRange($chars)
     {
         $format = '/\A([:main]+){0,1}:delimiter([:main]+){0,1}\Z/';
-        return static::patternMulti($chars, static::$delimiters['range'], $format);
+        return self::patternMulti($chars, self::$delimiters['range'], $format);
     }
 
     /**
@@ -126,8 +151,8 @@ class Straw
      */
     private static function register($key, $default, $pattern, callable $filter=null)
     {
-        static::$rules[$key] = new Core\Rule($key, $default, $pattern, $filter);
-        return static::$rules[$key];
+        self::$rules[$key] = new Core\Rule($key, $default, $pattern, $filter);
+        return self::$rules[$key];
     }
 
     /**
@@ -154,12 +179,12 @@ class Straw
                     }
                 }
             }
-            if ($delimiter === static::$delimiters['set'] && $values !== array_unique($values)) {
+            if ($delimiter === self::$delimiters['set'] && $values !== array_unique($values)) {
                 return null;
             }
             return $values;
         };
-        return static::register($key, $default, $pattern, $filter);
+        return self::register($key, $default, $pattern, $filter);
     }
 
     /**
@@ -174,11 +199,11 @@ class Straw
     private static function registerRange($key, $default, $pattern, callable $filter=null)
     {
         $range_filter = function ($input) use ($default) {
-            if ($input === static::$delimiters['range']) {
+            if ($input === self::$delimiters['range']) {
                 return null;
             }
-            $values = explode(static::$delimiters['range'], $input);
-            $fills  = array_filter(explode(static::$delimiters['range'], $default), 'strlen');
+            $values = explode(self::$delimiters['range'], $input);
+            $fills  = array_filter(explode(self::$delimiters['range'], $default), 'strlen');
             if ((! $values[0] || ! $values[1]) && count($fills) === 2) {
                 (! $values[0]) and ($values[0] = $fills[0]);
                 (! $values[1]) and ($values[1] = $fills[1]);
@@ -194,7 +219,7 @@ class Straw
                       $values = $range_filter($input);
                       return ($values) ? $filter($values) : null;
                   };
-        return static::register($key, $default, $pattern, $filters);
+        return self::register($key, $default, $pattern, $filters);
     }
 
     /**
@@ -208,7 +233,7 @@ class Straw
      */	
     public static function newRule($key, $pattern, $default=null)
     {
-        return static::register($key, $default, $pattern);
+        return self::register($key, $default, $pattern);
     }
 
     /**
@@ -223,7 +248,7 @@ class Straw
         $filter = function ($value) {
             return (int)$value;
         };
-        return static::register($key, $default, '/\A(0|1)\Z/', $filter);
+        return self::register($key, $default, '/\A(0|1)\Z/', $filter);
     }
 
     /**
@@ -231,12 +256,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alpha($key, $default=null)
+    public static function alpha($key, $default=null, $length=null)
     {
-        $pattern = static::pattern(static::$pattenrs['alpha']);
-        return static::register($key, $default, $pattern);
+        $pattern = self::pattern(self::$pattenrs['alpha'], $length);
+        return self::register($key, $default, $pattern);
     }
 
     /**
@@ -249,7 +275,7 @@ class Straw
      */
     public static function num($key, $default=null, array $allow=array())
     {
-        $pattern = static::pattern(static::$pattenrs['num']);
+        $pattern = self::pattern(self::$pattenrs['num']);
         $filter = function ($value) use ($allow) {
             $v = (int)$value;
             if (! $allow) {
@@ -257,7 +283,7 @@ class Straw
             }
             return ($allow[0] <= $v && $v <= $allow[1]) ? $v : null;
         };
-        return static::register($key, $default, $pattern, $filter);
+        return self::register($key, $default, $pattern, $filter);
     }
 
     /**
@@ -265,12 +291,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alphanum($key, $default=null)
+    public static function alphanum($key, $default=null, $length=null)
     {
-        $pattern = static::pattern(static::$pattenrs['alphanum']);
-        return static::register($key, $default, $pattern);
+        $pattern = self::pattern(self::$pattenrs['alphanum'], $length);
+        return self::register($key, $default, $pattern);
     }
 
     /**
@@ -278,12 +305,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alphaList($key, $default=null)
+    public static function alphaList($key, $default=null, $length=null)
     {
-        $pattern = static::patternList(static::$pattenrs['alpha'], static::$delimiters['list']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['list']);
+        $pattern = self::patternList(self::$pattenrs['alpha'], self::$delimiters['list'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['list']);
     }
 
     /**
@@ -296,8 +324,8 @@ class Straw
      */
     public static function numList($key, $default=null, array $allow=array())
     {
-        $pattern = static::patternList(static::$pattenrs['num'], static::$delimiters['list']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['list'], $allow);
+        $pattern = self::patternList(self::$pattenrs['num'], self::$delimiters['list']);
+        return self::registerList($key, $default, $pattern, self::$delimiters['list'], $allow);
     }
 
     /**
@@ -305,12 +333,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alphanumList($key, $default=null)
+    public static function alphanumList($key, $default=null, $length=null)
     {
-        $pattern = static::patternList(static::$pattenrs['alphanum'], static::$delimiters['list']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['list']);
+        $pattern = self::patternList(self::$pattenrs['alphanum'], self::$delimiters['list'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['list']);
     }
 
     /**
@@ -318,12 +347,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alphaSet($key, $default=null)
+    public static function alphaSet($key, $default=null, $length=null)
     {
-        $pattern = static::patternList(static::$pattenrs['alpha'], static::$delimiters['set']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['set']);
+        $pattern = self::patternList(self::$pattenrs['alpha'], self::$delimiters['set'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['set']);
     }
 
     /**
@@ -336,8 +366,8 @@ class Straw
      */
     public static function numSet($key, $default=null, array $allow=array())
     {
-        $pattern = static::patternList(static::$pattenrs['num'], static::$delimiters['set']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['set'], $allow);
+        $pattern = self::patternList(self::$pattenrs['num'], self::$delimiters['set']);
+        return self::registerList($key, $default, $pattern, self::$delimiters['set'], $allow);
     }
 
     /**
@@ -345,12 +375,13 @@ class Straw
      * 
      * @param string $key
      * @param string $default
+     * @param mixed $length
      * @return Core\Rule
      */
-    public static function alphanumSet($key, $default=null)
+    public static function alphanumSet($key, $default=null, $length=null)
     {
-        $pattern = static::patternList(static::$pattenrs['alphanum'], static::$delimiters['set']);
-        return static::registerList($key, $default, $pattern, static::$delimiters['set']);
+        $pattern = self::patternList(self::$pattenrs['alphanum'], self::$delimiters['set'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['set']);
     }
 
     /**
@@ -363,7 +394,7 @@ class Straw
      */
     public static function numRange($key, $default=null, array $allow=null)
     {
-        $pattern = static::patternRange(static::$pattenrs['num']);
+        $pattern = self::patternRange(self::$pattenrs['num']);
         $filter = function ($values) use ($allow) {
             $values = array_map(function ($v) {return (int)$v;}, $values);
             if (! $allow) {
@@ -376,7 +407,7 @@ class Straw
             }
             return $values;
         };
-        return static::registerRange($key, $default, $pattern, $filter);
+        return self::registerRange($key, $default, $pattern, $filter);
     }
 
     /**
@@ -389,12 +420,12 @@ class Straw
      */
     public static function datetimeRange($key, $default=null, $format='Ymd')
     {
-        if (strpos($format, static::$delimiters['range']) !== false) {
+        if (strpos($format, self::$delimiters['range']) !== false) {
             throw new \RuntimeException('A delimiter is included in a character string.');
         }
         //The character besides the alphanumeric is added.
-        $chars   = static::$pattenrs['alphanum'] . $format;
-        $pattern = static::patternRange($chars);
+        $chars   = self::$pattenrs['alphanum'] . $format;
+        $pattern = self::patternRange($chars);
         $filter  = function ($values) use ($format) {
             $start = \DateTime::createFromFormat($format, $values[0]);
             $end   = \DateTime::createFromFormat($format, $values[1]);
@@ -406,6 +437,6 @@ class Straw
                 $end
             );
         };
-        return static::registerRange($key, $default, $pattern, $filter);
+        return self::registerRange($key, $default, $pattern, $filter);
     }
 }

@@ -137,7 +137,7 @@ class StrawTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function 値に重複を含めセットルールの登録に失敗する()
+    public function セットルールの値に重複を含めデータの取得に失敗する()
     {
         $rule = Straw::alphaSet('test');
         $this->assertNull($rule('abc;def;def'));
@@ -258,5 +258,84 @@ class StrawTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull($rule(1));
         $this->assertNull($rule(10));
         $this->assertNull($rule('abc'));
+    }
+
+    /**
+     * @covers Nnssn\Straw\Straw::repeat
+     * @test
+     */
+    public function 第3引数で文字列の長さを制限()
+    {
+        $alpha_8     = Straw::alphanum('test1', null, 8);
+        $alpha_8to   = Straw::alphanum('test2', null, array(8, null));
+        $alpha_8to12 = Straw::alphanum('test3', null, array(8, 12));
+        $alpha_to12  = Straw::alphanum('test4', null, array(null, 12));
+
+        $length7  = 'a234567';
+        $length8  = 'a2345678';
+        $length13 = 'a234567890123';
+
+        //8
+        $this->assertNull($alpha_8($length7));
+        $this->assertNotNull($alpha_8($length8));
+        $this->assertNull($alpha_8($length13));
+
+        //8-
+        $this->assertNull($alpha_8to($length7));
+        $this->assertNotNull($alpha_8to($length8));
+        $this->assertNotNull($alpha_8to($length13));
+
+        //8-12
+        $this->assertNull($alpha_8to12($length7));
+        $this->assertNotNull($alpha_8to12($length8));
+        $this->assertNull($alpha_8to12($length13));
+
+        //-12
+        $this->assertNotNull($alpha_to12($length7));
+        $this->assertNotNull($alpha_to12($length8));
+        $this->assertNull($alpha_to12($length13));
+    }
+
+    /**
+     * @covers Nnssn\Straw\Straw::repeat
+     * @test
+     */
+    public function 第3引数でリストとセットの文字列の長さを制限()
+    {
+        $list_8    = Straw::alphanumList('list1', null, 8);
+        $list_8to  = Straw::alphanumList('list2', null, array(8, null));
+        $set_8to12 = Straw::alphanumSet('set1', null, array(8, 12));
+        $set_to12  = Straw::alphanumSet('set2', null, array(null, 12));
+
+        $input_single8  = 'a2345678';
+        $input_single13 = 'a234567890123';
+        $input_list8    = 'a2345678,b2345678';
+        $input_list13   = 'a234567890123,a234567890123';
+        $input_set8     = 'a2345678;b2345678';
+        $input_set13    = 'a234567890123;a234567890123';
+
+        //list_8
+        $this->assertNotNull($list_8($input_single8));
+        $this->assertNull($list_8($input_single13));
+        $this->assertNotNull($list_8($input_list8));
+        $this->assertNull($list_8($input_list13));
+
+        //list_8to
+        $this->assertNotNull($list_8to($input_single8));
+        $this->assertNotNull($list_8to($input_single13));
+        $this->assertNotNull($list_8to($input_list8));
+        $this->assertNotNull($list_8to($input_list13));
+
+        //set_8to12
+        $this->assertNotNull($set_8to12($input_single8));
+        $this->assertNull($set_8to12($input_single13));
+        $this->assertNotNull($set_8to12($input_set8));
+        $this->assertNull($set_8to12($input_set13));
+
+        //set_to12
+        $this->assertNotNull($set_to12($input_single8));
+        $this->assertNull($set_to12($input_single13));
+        $this->assertNotNull($set_to12($input_set8));
+        $this->assertNull($set_to12($input_set13));
     }
 }

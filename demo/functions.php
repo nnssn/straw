@@ -12,9 +12,7 @@ function currentUri()
 
 function queryString()
 {
-    $result = array();
-    foreach ($_GET as $key => $value) {
-        $result[$key] = h($value);
-    }
-    return $result;
+    return array_map(function ($value) {
+        return (! is_array($value)) ? h($value) : array_map('h', $value);
+    }, $_GET);
 }

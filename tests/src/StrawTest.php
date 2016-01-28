@@ -35,12 +35,12 @@ class StrawTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Nnssn\Straw\Straw::add
+     * @covers Nnssn\Straw\Straw::newRule
      * @test
      */
     public function 独自ルールの登録()
     {
-        $rule = Straw::add('test', '/^[a-z]+$/');
+        $rule = Straw::newRule('test', '/^[a-z]+$/');
         $this->assertNotNull($rule('abcde'));
         $this->assertNull($rule('abcd5'));
     }

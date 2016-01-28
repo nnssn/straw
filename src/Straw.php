@@ -188,10 +188,12 @@ class Straw
             }
             return (count(array_filter($values, 'strlen')) === 2) ? $values : null;
         };
-        $filters = (! $filter) ? $range_filter : function ($input) use ($filter, $range_filter) {
-            $values = $range_filter($input);
-            return ($values) ? $filter($values) : null;
-        };
+        $filters = (! $filter)
+                ? $range_filter
+                : function ($input) use ($filter, $range_filter) {
+                      $values = $range_filter($input);
+                      return ($values) ? $filter($values) : null;
+                  };
         return static::register($key, $default, $pattern, $filters);
     }
 
@@ -204,7 +206,7 @@ class Straw
      * @param string $default
      * @return Core\Rule
      */	
-    public static function add($key, $pattern, $default=null)
+    public static function newRule($key, $pattern, $default=null)
     {
         return static::register($key, $default, $pattern);
     }

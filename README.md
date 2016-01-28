@@ -56,9 +56,9 @@ array
 
 ### Basic rule
 ```
-Straw::alpha    //a-zA-z
+Straw::alpha    //a-zA-z_
 Straw::num      //0-9
-Straw::alphanum //a-zA-z0-9
+Straw::alphanum //0-9a-zA-z_
 ```
 
 ### List rule

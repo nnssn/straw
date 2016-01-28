@@ -10,7 +10,24 @@ namespace Nnssn\Straw;
 abstract class Manual
 {
     /**
+     * @var mixed
+     */
+    protected $more;
+
+    /**
+     * Construct
+     * 
+     * @param mixed $more additional data
+     */
+    public function __construct($more=null)
+    {
+        $this->more = $more;
+    }
+
+    /**
      * Overwrite input source
+     * 
+     * return array
      */
 	public function source()
     {

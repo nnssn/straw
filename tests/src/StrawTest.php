@@ -183,6 +183,43 @@ class StrawTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers Nnssn\Straw\Straw::alphaPair
+     * @test
+     */
+    public function 英字ペアルールの登録()
+    {
+        $rule = Straw::alphaPair('test');
+        $this->assertNotNull($rule('abc:def'));
+        $this->assertNull($rule('abc:'));
+        $this->assertNull($rule('abc:def:ghi'));
+    }
+
+    /**
+     * @covers Nnssn\Straw\Straw::numPair
+     * @test
+     */
+    public function 数字ペアルールの登録()
+    {
+        $rule = Straw::numPair('test');
+        $this->assertNotNull($rule('123:456'));
+        $this->assertNotNull($rule('123:123'));
+        $this->assertNull($rule('123:'));
+        $this->assertNull($rule('123:456:789'));
+    }
+
+    /**
+     * @covers Nnssn\Straw\Straw::alphanumPair
+     * @test
+     */
+    public function 英数字ペアルールの登録()
+    {
+        $rule = Straw::alphanumPair('test');
+        $this->assertNotNull($rule('abc1:def2'));
+        $this->assertNull($rule('abc1:'));
+        $this->assertNull($rule('abc1:def2:ghi3'));
+    }
+
+    /**
      * @covers Nnssn\Straw\Straw::numRange
      * @test
      */

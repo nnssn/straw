@@ -18,6 +18,7 @@ class Straw
     protected static $delimiters = array(
         'list'  => ',',
         'set'   => ';',
+        'pair'  => ':',
         'range' => '-',
     );
 
@@ -125,6 +126,20 @@ class Straw
     private static function patternList($chars, $delimiter, $length=null)
     {
         $format = '/\A([:main]{:min,:max}:delimiter(?!:delimiter))*[:main]{:min,:max}\Z/';
+        return self::patternMulti($chars, $delimiter, $format, $length);
+    }
+
+    /**
+     * Make Pair pattern
+     * 
+     * @param string $chars
+     * @param string $delimiter
+     * @param mixed $length
+     * @return string
+     */
+    private static function patternPair($chars, $delimiter, $length=null)
+    {
+        $format = '/\A[:main]{:min,:max}:delimiter[:main]{:min,:max}\Z/';
         return self::patternMulti($chars, $delimiter, $format, $length);
     }
 
@@ -382,6 +397,48 @@ class Straw
     {
         $pattern = self::patternList(self::$pattenrs['alphanum'], self::$delimiters['set'], $length);
         return self::registerList($key, $default, $pattern, self::$delimiters['set']);
+    }
+
+    /**
+     * Add alpha pair rule
+     * 
+     * @param string $key
+     * @param string $default
+     * @param mixed $length
+     * @return Core\Rule
+     */
+    public static function alphaPair($key, $default=null, $length=null)
+    {
+        $pattern = self::patternPair(self::$pattenrs['alpha'], self::$delimiters['pair'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['pair']);
+    }
+
+    /**
+     * Add numeric pair rule
+     * 
+     * @param string $key
+     * @param string $default
+     * @param array $allow
+     * @return Core\Rule
+     */
+    public static function numPair($key, $default=null, array $allow=array())
+    {
+        $pattern = self::patternPair(self::$pattenrs['num'], self::$delimiters['pair']);
+        return self::registerList($key, $default, $pattern, self::$delimiters['pair'], $allow);
+    }
+
+    /**
+     * Add alphanumeric pair rule
+     * 
+     * @param string $key
+     * @param string $default
+     * @param mixed $length
+     * @return Core\Rule
+     */
+    public static function alphanumPair($key, $default=null, $length=null)
+    {
+        $pattern = self::patternPair(self::$pattenrs['alphanum'], self::$delimiters['pair'], $length);
+        return self::registerList($key, $default, $pattern, self::$delimiters['pair']);
     }
 
     /**

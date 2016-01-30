@@ -19,7 +19,7 @@ abstract class Manual
      * 
      * @param mixed $more additional data
      */
-    public function __construct($more=null)
+    public function __construct($more = null)
     {
         $this->more = $more;
     }

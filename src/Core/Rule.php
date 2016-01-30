@@ -74,13 +74,13 @@ class Rule
         if (! $res_input && ($this->default || $this->default === '0')) {
             (preg_match($this->pattern, $this->default)) and ($res_default = $this->default);
         }
-        if (is_null($res_input) && is_null($res_default)) {
+        if ($res_input === null && $res_default === null) {
             return null;
         }
 
-        $use_value = ($res_input) ?: $res_default;
+        $use_value    = $res_input ?: $res_default;
         $return_value = $this->patch($use_value);
-        if (is_null($return_value)) {
+        if ($return_value === null) {
             return null;
         }
         return array(
@@ -100,7 +100,7 @@ class Rule
         $filter   = $this->filter;
         $format   = $this->format;
 
-        $filterd  = ($filter) ? $filter($value) : $value;
+        $filterd  = ($filter) ? $filter($value)   : $value;
         $formated = ($format) ? $format($filterd) : $filterd;
         return $formated;
     }

@@ -27,7 +27,7 @@ class Maker
      * 
      * @param Manual $manual
      */
-    public function __construct(Manual $manual=null)
+    public function __construct(Manual $manual = null)
     {
         ($manual) and ($this->readManual($manual));
     }

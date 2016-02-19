@@ -13,6 +13,7 @@ class Rule
     private $default;
     private $pattern;
     private $filter;
+    private $delimiter;
 
     private $to_key;
     private $format;
@@ -20,17 +21,19 @@ class Rule
     /**
      * Construct
      * 
-     * @param string $key
+     * @param string|string[] $key
      * @param string|null $default
      * @param string $pattern
      * @param callable|null $filter
+     * @param string $delimiter
      */
-    public function __construct($key, $default, $pattern, $filter)
+    public function __construct($key, $default, $pattern, $filter, $delimiter = '')
     {
-        $this->key     = $key;
-        $this->default = ($default) ? (string)$default : null;
-        $this->pattern = $pattern;
-        $this->filter  = $filter;
+        $this->key       = $key;
+        $this->default   = ($default) ? (string)$default : null;
+        $this->pattern   = $pattern;
+        $this->filter    = $filter;
+        $this->delimiter = $delimiter;
     }
 
     /**
@@ -65,6 +68,9 @@ class Rule
      */
     public function __invoke($value)
     {
+        if (is_array($value)) {
+            $value = implode($this->delimiter, $value);
+        }
         $value       = (string)$value;
         $res_input   = null;
         $res_default = null;
@@ -83,8 +89,10 @@ class Rule
         if ($return_value === null) {
             return null;
         }
+
+        $key = (is_array($this->key)) ? implode('', $this->key) : $this->key;
         return array(
-            'key'   => ($this->to_key) ?: $this->key,
+            'key'   => ($this->to_key) ?: $key,
             'value' => $return_value,
         );
     }

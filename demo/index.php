@@ -20,6 +20,9 @@ Straw::alphanum('top')->to('array.inner');
 Straw::num('val1')->to('values.');
 Straw::num('val2')->to('values.');
 
+Straw::alphaList(array('a1', 'a2'));
+Straw::numPair(array('num1', 'num2'));
+
 Straw::alphanum('name')
         ->to('username')
         ->format(function ($value) {
@@ -41,6 +44,7 @@ $res = Straw::open()->make();
             <li><a href="?al=a&allist=bc,de&alset=f;g">alpha</a></li>
             <li><a href="?num=1&numlist=2,3&numset=4;5&numset_duplicate=1;1&numrange=6-9">nums</a></li>
             <li><a href="?before=change&top=in&val1=10&val2=20">changeKey</a></li>
+            <li><a href="?a1=abc&a2=def&num1=10&num2=20">mix</a></li>
             <li><a href="?name=git">format</a></li>
         </ul>
         <hr>

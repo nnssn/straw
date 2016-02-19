@@ -9,6 +9,8 @@ namespace Nnssn\Straw;
  */
 class Straw
 {
+    const MIX_DELIMITER = "\\";
+
     private static $pattenrs = array(
         'alpha'    => 'a-zA-Z',
         'num'      => '0-9',
@@ -162,12 +164,16 @@ class Straw
      * @param string|null $default
      * @param string $pattern
      * @param callable $filter
+     * @param string $delimiter
      * @return Core\Rule
      */
-    private static function register($key, $default, $pattern, callable $filter = null)
+    private static function register($key, $default, $pattern, callable $filter = null, $delimiter = '')
     {
-        self::$rules[$key] = new Core\Rule($key, $default, $pattern, $filter);
-        return self::$rules[$key];
+        $name = (is_array($key))
+                ? implode(self::MIX_DELIMITER, $key)
+                : $key;
+        self::$rules[$name] = new Core\Rule($key, $default, $pattern, $filter, $delimiter);
+        return self::$rules[$name];
     }
 
     /**
@@ -199,7 +205,7 @@ class Straw
             }
             return $values;
         };
-        return self::register($key, $default, $pattern, $filter);
+        return self::register($key, $default, $pattern, $filter, $delimiter);
     }
 
     /**
@@ -234,7 +240,7 @@ class Straw
                       $values = $range_filter($input);
                       return ($values) ? $filter($values) : null;
                   };
-        return self::register($key, $default, $pattern, $filters);
+        return self::register($key, $default, $pattern, $filters, self::$delimiters['range']);
     }
 
     /**

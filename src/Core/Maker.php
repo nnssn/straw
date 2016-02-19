@@ -100,7 +100,14 @@ class Maker
     private function getInputValue($key)
     {
         $source = ($this->source) ?: $_GET;
-        return (isset($source[$key])) ? $source[$key] : null;
+        if (strpos($key, "\\") === false) {
+            return (isset($source[$key])) ? $source[$key] : null;
+        }
+        $keys   = explode("\\", $key);
+        $values = array_map(function ($key) use ($source) {
+            return (isset($source[$key])) ? $source[$key] : null;
+        }, $keys);
+        return $values;
     }
 
     /**

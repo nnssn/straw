@@ -375,4 +375,18 @@ class StrawTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull($set_to12($input_set8));
         $this->assertNull($set_to12($input_set13));
     }
+
+    /**
+     * @test
+     */
+    public function 複数キーからルールを登録()
+    {
+        $rule = Straw::alphanumPair(array('key1', 'key2'));
+        $this->assertNotNull($rule(array('val1', 'val2')));
+        $this->assertNull($rule(array('val1')));
+
+        $rule = Straw::alphanumList(array('key1', 'key2'));
+        $this->assertNotNull($rule(array('val1', 'val2')));
+        $this->assertNotNull($rule(array('val1', 'val2', 'val3')));
+    }
 }

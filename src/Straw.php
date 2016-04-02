@@ -1,495 +1,452 @@
 <?php
 
-namespace Nnssn\Straw;
-
 /**
  * The main class of this library
- *
- * @author nnssn
  */
+
+namespace Straw;
+
+use Straw\Rule\Rulable;
+use Straw\Rule\Regex;
+use Straw\Rule\Sets;
+
 class Straw
 {
-    const MIX_DELIMITER = "\\";
+    protected static $configure;
 
-    private static $pattenrs = array(
-        'alpha'    => 'a-zA-Z',
-        'num'      => '0-9',
-        'alphanum' => 'a-zA-Z0-9',
-    );
-
-    protected static $delimiters = array(
-        'list'  => ',',
-        'set'   => ';',
-        'pair'  => ':',
-        'range' => '-',
-    );
-
-    protected static $allow_alpha_subs = '_';
+    protected static $dummies = array('regex' => null, 'sets'  => null);
 
     /**
-     * @var Core\Rule[]
+     * @var Rulable[]
      */
-    protected static $rules = array();
+    protected $rules = array();
 
     /**
-     * Set options
+     * @var Manual
+     */
+    protected $manual;
+
+    /**
+     * @var array
+     */
+    protected $source;
+
+    protected $complete;
+
+    /**
+     * Get dummy Rulable instance
      * 
-     * @param array $options
+     * @param string $name
+     * @return Rulable
      */
-    public static function options(array $options)
+    protected static function getDummy($name)
     {
-        self::$pattenrs   = $options + self::$pattenrs;
-        self::$delimiters = $options + self::$delimiters;
-        if (isset($options['allow_alpha_subs'])) {
-            self::$allow_alpha_subs = $options['allow_alpha_subs'];
+        if (! static::$dummies[$name]) {
+            static::$dummies[$name] = ($name === 'regex')
+                ? Regex::create('duumy', null, Regex::TYPE_NORMAL)
+                : Sets::create('duumy', null, Sets::TYPE_SET, array());
         }
+        return static::$dummies[$name];
     }
 
     /**
-     * Create Core\Maker instance
+     * Get configure
      * 
-     * @return Core\Maker
-     */
-    public static function open(Manual $manual = null)
-    {
-        return new Core\Maker($manual);
-    }
-
-    /**
-     * Return the registered rules
-     * 
-     * @return Core\Rule[]
-     */
-    public static function getRules()
-    {
-        return self::$rules;
-    }
-
-    /**
-     * Normalize length array
-     * 
-     * @param mixed $length
+     * @param string $key
      * @return array
      */
-    private static function repeat($length)
+    public static function getConfigure($key)
     {
-        if (is_numeric($length)) {
-            return array($length, $length);
+        return static::$configure[$key];
+    }
+
+    /**
+     * Create instance
+     * 
+     * @param array|Manual $source
+     * @return static
+     */
+    public static function open($source = null)
+    {
+        return new static($source);
+    }
+
+    /**
+     * Exists source
+     * 
+     * @param string|string[] $key
+     * @return bool
+     */
+    private function existsSource($key)
+    {
+        foreach ((array)$key as $k) {
+            if (! isset($this->source[$k])) {
+                return false;
+            }
         }
-        if (! is_array($length)) {
-            return array(1, '');
-        }
-        return array(
-            (! empty($length[0])) ? $length[0] : 1,
-            (! empty($length[1])) ? $length[1] : '',
-        );
-    }
-
-    /**
-     * Make normal pattern
-     * 
-     * @param string $chars
-     * @param mixed $length
-     * @return string
-     */
-    private static function pattern($chars, $length = null)
-    {
-        $main   = ($chars === self::$pattenrs['num']) ? $chars : $chars . self::$allow_alpha_subs;
-        $repeat = self::repeat($length);
-        return sprintf('/\A[%s]{%s,%s}\Z/', $main, $repeat[0], $repeat[1]);
-    }
-
-    /**
-     * Make multi pattern
-     * 
-     * @param string $chars
-     * @param string $delimiter
-     * @param string $format
-     * @param mixed $length
-     * @return string
-     */
-    private static function patternMulti($chars, $delimiter, $format, $length = null)
-    {
-        $main    = ($chars === self::$pattenrs['num']) ? $chars : $chars . self::$allow_alpha_subs;
-        $repeat  = self::repeat($length);
-        $search  = array(':main', ':delimiter', ':min', ':max');
-        $replace = array($main, $delimiter, $repeat[0], $repeat[1]);
-        return str_replace($search, $replace, $format);
-    }
-
-    /**
-     * Make list pattern
-     * 
-     * @param string $chars
-     * @param string $delimiter
-     * @param mixed $length
-     * @return string
-     */
-    private static function patternList($chars, $delimiter, $length = null)
-    {
-        $format = '/\A([:main]{:min,:max}:delimiter(?!:delimiter))*[:main]{:min,:max}\z/';
-        return self::patternMulti($chars, $delimiter, $format, $length);
-    }
-
-    /**
-     * Make Pair pattern
-     * 
-     * @param string $chars
-     * @param string $delimiter
-     * @param mixed $length
-     * @return string
-     */
-    private static function patternPair($chars, $delimiter, $length = null)
-    {
-        $format = '/\A[:main]{:min,:max}:delimiter[:main]{:min,:max}\z/';
-        return self::patternMulti($chars, $delimiter, $format, $length);
-    }
-
-    /**
-     * Make range pattern
-     * 
-     * @param string $chars
-     * @return string
-     */
-    private static function patternRange($chars)
-    {
-        $format = '/\A([:main]+){0,1}:delimiter([:main]+){0,1}\z/';
-        return self::patternMulti($chars, self::$delimiters['range'], $format);
+        return true;
     }
 
     /**
      * Register rule
      * 
-     * @param string $key
-     * @param string|null $default
-     * @param string $pattern
-     * @param callable $filter
-     * @param string $delimiter
-     * @return Core\Rule
+     * @param Rulable $rule
+     * @return Rulable
      */
-    private static function register($key, $default, $pattern, callable $filter = null, $delimiter = '')
+    private function register(Rulable $rule)
     {
-        $name = (is_array($key))
-                ? implode(self::MIX_DELIMITER, $key)
-                : $key;
-        self::$rules[$name] = new Core\Rule($key, $default, $pattern, $filter, $delimiter);
-        return self::$rules[$name];
+        $key = $rule->info('key');
+        $name = (is_array($key)) ? implode('\\', $key) : $key;
+        $this->rules[$name] = $rule;
+        return $this->rules[$name];
     }
 
     /**
-     * Register list type rule
+     * Add regex rule
      * 
-     * @param string $key
-     * @param string|null $default
-     * @param string $pattern
-     * @param string $delimiter
-     * @param array $allow
-     * @return Core\Rule
+     * @param string|string[] $key
+     * @param string|string[] $default
+     * @param int $type
+     * @return Regex
      */
-    private static function registerList($key, $default, $pattern, $delimiter = null, $allow = null)
+    private function addRegex($key, $default, $type)
     {
-        $filter = function ($input) use ($delimiter, $allow) {
-            $values = explode($delimiter, $input);
-            if (is_array($allow)) {
-                $values = array_map(function ($v) {return (int)$v;}, $values);
+        return ($default || $this->existsSource($key))
+            ? $this->register(Regex::create($key, $default, $type))
+            : self::getDummy('regex');;
+    }
+
+    /**
+     * Add regex rule
+     * 
+     * @param string|string[] $key
+     * @param string|string[] $default
+     * @param int $type
+     * @param array $candidates
+     * @return Sets
+     */
+    private function addSets($key, $default, $type, array $candidates)
+    {
+        return ($default || $this->existsSource($key))
+            ? $this->register(Sets::create($key, $default, $type, $candidates))
+            : self::getDummy('sets');
+    }
+
+    /**
+     * Apply rules
+     * 
+     * @return array
+     */
+    private function collection()
+    {
+        $result = array();
+        foreach ($this->rules as $rule) {
+            $key = $rule->info('key');
+            $source = array();
+
+            if (! is_array($key)) {
+                $source = $this->source[$key];
             }
-            if ($allow) {
-                foreach ($values as $v) {
-                    if ($v < $allow[0] || $allow[1] < $v) {
-                        return null;
-                    }
+            else {
+                foreach ($key as $k) {
+                    $source[] = $this->source[$k];
                 }
             }
-            if ($delimiter === self::$delimiters['set'] && $values !== array_unique($values)) {
-                return null;
-            }
-            return $values;
-        };
-        return self::register($key, $default, $pattern, $filter, $delimiter);
+            $key_value = $rule($source);
+            ($key_value) and ($result[] = $key_value);
+        }
+        return $result;
     }
 
     /**
-     * Register range type rule
+     * Build the valid data
+     * 
+     * @param array $collection
+     * @return array
+     */
+    private function build(array $collection)
+    {
+        $result = array();
+        foreach ($collection as $set) {
+            extract($set);
+            $keys = explode('.', $key);
+
+            if (count($keys) == 1) {
+                $result[$key] = $value;
+                continue;
+            }
+
+            $target =& $result;
+            while (count($keys) > 1) {
+                $key = array_shift($keys);
+                if (! isset($target[$key]) || ! is_array($target[$key])) {
+                    $target[$key] = array();
+                }
+                $target =& $target[$key];
+            }
+
+            ($keys[0])
+                ? $target[$keys[0]] = $value
+                : $target[] = $value;
+        }
+        return $result;
+    }
+
+    /**
+     * Construct
+     * 
+     * @param array|Manual $source
+     */
+    public function __construct($source = null)
+    {
+        $this->manual = ($source instanceof Manual) ? $source : new Manual;
+        $this->source = (is_array($source))         ? $source : $this->manual->source();
+        static::$configure = $this->manual->getConfigure();
+        $this->manual->rules($this);
+    }
+
+    /**
+     * Set complete callback
+     * 
+     * @param callable $callback
+     * @return $this
+     */
+    public function complete($callback)
+    {
+        $this->complete = $callback;
+        return $this;
+    }
+
+    /**
+     * Make
+     * 
+     * @return array
+     */
+    public function make()
+    {
+        $collection = $this->collection();
+        $values     = $this->build($collection);
+        $complete   = $this->complete ?: $this->manual->complate();
+        return ($complete) ? $complete($values) : $values;
+    }
+
+    /**
+     * Add bool rule
      * 
      * @param string $key
      * @param string|null $default
-     * @param string $pattern
-     * @param callable $filter
-     * @return Core\Rule
+     * @return Regex
      */
-    private static function registerRange($key, $default, $pattern, callable $filter = null)
+    public function bool($key, $default = null)
     {
-        $range_filter = function ($input) use ($default) {
-            if ($input === self::$delimiters['range']) {
-                return null;
-            }
-            $values = explode(self::$delimiters['range'], $input);
-            $fills  = array_filter(explode(self::$delimiters['range'], $default), 'strlen');
-            if ((! $values[0] || ! $values[1]) && count($fills) === 2) {
-                (! $values[0]) and ($values[0] = $fills[0]);
-                (! $values[1]) and ($values[1] = $fills[1]);
-            }
-            if ($values[0] > $values[1]) {
-                return null;
-            }
-            return (count(array_filter($values, 'strlen')) === 2) ? $values : null;
-        };
-        $filters = (! $filter)
-                ? $range_filter
-                : function ($input) use ($filter, $range_filter) {
-                      $values = $range_filter($input);
-                      return ($values) ? $filter($values) : null;
-                  };
-        return self::register($key, $default, $pattern, $filters, self::$delimiters['range']);
-    }
-
-    /**
-     * 
-     * Add original rule
-     * 
-     * @param string $key
-     * @param string $pattern
-     * @param string $default
-     * @return Core\Rule
-     */	
-    public static function newRule($key, $pattern, $default = null)
-    {
-        return self::register($key, $default, $pattern);
-    }
-
-    /**
-     * Add boolean rule
-     * 
-     * @param string $key
-     * @param string|null $default
-     * @return Core\Rule
-     */
-    public static function bool($key, $default = null)
-    {
-        $filter = function ($input) {
-            return (int)$input;
-        };
-        return self::register($key, $default, '/\A(0|1)\z/', $filter);
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->number(null)->original('(0|1)');
     }
 
     /**
      * Add alpha rule
      * 
      * @param string $key
-     * @param string $default
+     * @param string|null $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alpha($key, $default = null, $length = null)
+    public function alpha($key, $default = null, $length = null)
     {
-        $pattern = self::pattern(self::$pattenrs['alpha'], $length);
-        return self::register($key, $default, $pattern);
-    }
-
-    /**
-     * Add numeric rule
-     * 
-     * @param string $key
-     * @param string $default
-     * @param array $allow
-     * @return Core\Rule
-     */
-    public static function num($key, $default = null, array $allow = array())
-    {
-        $pattern = self::pattern(self::$pattenrs['num']);
-        $filter  = function ($input) use ($allow) {
-            $value = (int)$input;
-            if (! $allow) {
-                return $value;
-            }
-            return ($value < $allow[0] || $allow[1] < $value) ? null : $value;
-        };
-        return self::register($key, $default, $pattern, $filter);
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->alpha($length);
     }
 
     /**
      * Add alphanumeric rule
      * 
      * @param string $key
-     * @param string $default
+     * @param string|null $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alphanum($key, $default = null, $length = null)
+    public function alnum($key, $default = null, $length = null)
     {
-        $pattern = self::pattern(self::$pattenrs['alphanum'], $length);
-        return self::register($key, $default, $pattern);
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->alnum($length);
+    }
+
+    /**
+     * Add numeric rule
+     * 
+     * @param string $key
+     * @param string|null $default
+     * @param array $allow
+     * @return Regex
+     */
+    public function number($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->number($allow);
+    }
+
+    /**
+     * Add original rule
+     * 
+     * @param string $key
+     * @param string|null $default
+     * @param string $piece
+     * @return Regex
+     */
+    public function original($key, $default, $piece)
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->original($piece);
     }
 
     /**
      * Add alpha list rule
      * 
-     * @param string $key
-     * @param string $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alphaList($key, $default = null, $length = null)
+    public function alphaList($key, $default = null, $length = null)
     {
-        $pattern = self::patternList(self::$pattenrs['alpha'], self::$delimiters['list'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['list']);
-    }
-
-    /**
-     * Add numeric list rule
-     * 
-     * @param string $key
-     * @param string $default
-     * @param array $allow
-     * @return Core\Rule
-     */
-    public static function numList($key, $default = null, array $allow = array())
-    {
-        $pattern = self::patternList(self::$pattenrs['num'], self::$delimiters['list']);
-        return self::registerList($key, $default, $pattern, self::$delimiters['list'], $allow);
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->alpha($length);
     }
 
     /**
      * Add alphanumeric list rule
      * 
-     * @param string $key
-     * @param string $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alphanumList($key, $default = null, $length = null)
+    public function alnumList($key, $default = null, $length = null)
     {
-        $pattern = self::patternList(self::$pattenrs['alphanum'], self::$delimiters['list'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['list']);
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->alnum($length);
     }
 
     /**
-     * Add alpha set rule
+     * Add numeric list rule
      * 
-     * @param string $key
-     * @param string $default
-     * @param mixed $length
-     * @return Core\Rule
-     */
-    public static function alphaSet($key, $default = null, $length = null)
-    {
-        $pattern = self::patternList(self::$pattenrs['alpha'], self::$delimiters['set'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['set']);
-    }
-
-    /**
-     * Add numeric set rule
-     * 
-     * @param string $key
-     * @param string $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param array $allow
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function numSet($key, $default = null, array $allow = array())
+    public function numberList($key, $default = null, array $allow = array())
     {
-        $pattern = self::patternList(self::$pattenrs['num'], self::$delimiters['set']);
-        return self::registerList($key, $default, $pattern, self::$delimiters['set'], $allow);
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->number($allow);
     }
 
     /**
-     * Add alphanumeric set rule
+     * Add original list rule
      * 
-     * @param string $key
-     * @param string $default
-     * @param mixed $length
-     * @return Core\Rule
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param string $piece
+     * @return Regex
      */
-    public static function alphanumSet($key, $default = null, $length = null)
+    public function originalList($key, $default, $piece)
     {
-        $pattern = self::patternList(self::$pattenrs['alphanum'], self::$delimiters['set'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['set']);
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->original($piece);
     }
 
     /**
      * Add alpha pair rule
      * 
-     * @param string $key
-     * @param string $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alphaPair($key, $default = null, $length = null)
+    public function alphaPair($key, $default = null, $length = null)
     {
-        $pattern = self::patternPair(self::$pattenrs['alpha'], self::$delimiters['pair'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['pair']);
-    }
-
-    /**
-     * Add numeric pair rule
-     * 
-     * @param string $key
-     * @param string $default
-     * @param array $allow
-     * @return Core\Rule
-     */
-    public static function numPair($key, $default = null, array $allow = array())
-    {
-        $pattern = self::patternPair(self::$pattenrs['num'], self::$delimiters['pair']);
-        return self::registerList($key, $default, $pattern, self::$delimiters['pair'], $allow);
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->alpha($length);
     }
 
     /**
      * Add alphanumeric pair rule
      * 
-     * @param string $key
-     * @param string $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param mixed $length
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function alphanumPair($key, $default = null, $length = null)
+    public function alnumPair($key, $default = null, $length = null)
     {
-        $pattern = self::patternPair(self::$pattenrs['alphanum'], self::$delimiters['pair'], $length);
-        return self::registerList($key, $default, $pattern, self::$delimiters['pair']);
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->alnum($length);
+    }
+
+    /**
+     * Add numeric pair rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param array $allow
+     * @return Regex
+     */
+    public function numberPair($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->number($allow);
+    }
+
+    /**
+     * Add original pair rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param string $piece
+     * @return Regex
+     */
+    public function originalPair($key, $default, $piece)
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->original($piece);
     }
 
     /**
      * Add num range rule
      * 
-     * @param string $key
-     * @param string|null $default
+     * @param string|string[] $key
+     * @param mixed $default
      * @param array $allow
-     * @return Core\Rule
+     * @return Regex
      */
-    public static function numRange($key, $default = null, array $allow = array())
+    public function numberRange($key, $default = null, array $allow = array())
     {
-        $pattern = self::patternRange(self::$pattenrs['num']);
-        $filter = function ($input) use ($allow) {
-            $range = array_map(function ($v) {return (int)$v;}, $input);
-            if (! $allow) {
-                return $range;
-            }
-            return ($range[0] < $allow[0] || $allow[1] < $range[0]
-                    || $range[1] < $allow[0] || $allow[1] < $range[1]) ? null : $range;
-        };
-        return self::registerRange($key, $default, $pattern, $filter);
+        return $this->addRegex($key, $default, Regex::TYPE_RANGE)->number($allow);
     }
 
     /**
      * Add datetime range rule
      * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param string $format
+     * @return Regex
+     */
+    public function datetimeRange($key, $default = null, $format = 'Ymd')
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_RANGE)->datetime($format);
+    }
+
+    /**
+     * Add set rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param array $candidates
+     * @return Sets
+     */
+    public function set($key, $default, array $candidates)
+    {
+        return $this->addSets($key, $default, Sets::TYPE_SET, $candidates);
+    }
+
+    /**
+     * Add enum rule
+     * 
      * @param string $key
      * @param string|null $default
-     * @param string $format
-     * @return Core\Rule
+     * @param array $candidates
+     * @return Sets
      */
-    public static function datetimeRange($key, $default = null, $format = 'Ymd')
+    public function enum($key, $default, array $candidates)
     {
-        if (strpos($format, self::$delimiters['range']) !== false) {
-            throw new \RuntimeException('A delimiter is included in a character string.');
-        }
-        //The character besides the alphanumeric is added.
-        $chars   = self::$pattenrs['alphanum'] . $format;
-        $pattern = self::patternRange($chars);
-        $filter  = function ($input) use ($format) {
-            $start = \DateTime::createFromFormat($format, $input[0]);
-            $end   = \DateTime::createFromFormat($format, $input[1]);
-            return ($start && $end) ? array($start, $end) : null;
-        };
-        return self::registerRange($key, $default, $pattern, $filter);
+        return $this->addSets($key, $default, Sets::TYPE_ENUM, $candidates);
     }
 }

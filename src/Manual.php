@@ -1,14 +1,23 @@
 <?php
 
-namespace Nnssn\Straw;
-
 /**
  * Manual is the base class for
- *
- * @author nnssn
  */
-abstract class Manual
+
+namespace Straw;
+
+class Manual
 {
+    protected $alpha;
+    protected $alnum;
+    protected $number;
+    protected $sub_characters;
+
+    protected $list;
+    protected $pair;
+    protected $range;
+    protected $set;
+
     /**
      * @var mixed
      */
@@ -22,6 +31,33 @@ abstract class Manual
     public function __construct($more = null)
     {
         $this->more = $more;
+        $this->configure();
+    }
+
+    /**
+     * Get configure
+     * 
+     * @return array
+     */
+    final public function getConfigure()
+    {
+        return get_object_vars($this);
+    }
+
+    /**
+     * Set configure
+     */
+    protected function configure()
+    {
+        $this->alpha  = 'a-zA-Z';
+        $this->alnum  = 'a-zA-Z0-9';
+        $this->number = '0-9';
+        $this->sub_characters = '_';
+
+        $this->list  = ',';
+        $this->pair  = ':';
+        $this->range = '-';
+        $this->set   = ';';
     }
 
     /**
@@ -31,21 +67,25 @@ abstract class Manual
      */
 	public function source()
     {
-        return null;
+        return $_GET;
     }
 
     /**
      * After format
      * 
-     * return callable
+     * return callable|null
      */
 	public function complate()
     {
         return null;
     }
 
-	/**
-     * Please write your rules.
+    /**
+     * Your rules
+     * 
+     * @param Straw $s
      */
-	abstract public function rules();
+    public function rules(Straw $s)
+    {
+    }
 }

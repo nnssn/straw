@@ -13,6 +13,6 @@ function currentUri()
 function queryString()
 {
     return array_map(function ($value) {
-        return (! is_array($value)) ? h($value) : array_map('h', $value);
+        return (is_array($value)) ? array_map('h', $value) : h($value);
     }, $_GET);
 }

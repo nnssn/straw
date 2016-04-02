@@ -2,9 +2,6 @@ Straw
 ====
 Straw will make a bridge of query string\(URL parameter\) and output.
 
-## Demo
-[demo page](https://github.com/nnssn/straw/blob/master/demo/index.php)
-
 ## Requirement
 PHP 5.3.*
 
@@ -18,13 +15,14 @@ composer require nnssn/straw:@0.9.*
 ```
 require 'vendor/autoload.php';
 
-use Nnssn\Straw\Straw;
+use Straw\Straw;
 
-Straw::alpha('type');
-Straw::num('page', 1);      //Second parameter is default value.
-Straw::alphanum('missing');
-Straw::numList('point');
-$result = Straw::open()->make();
+$s = Straw::open();
+$s->alpha('type');
+$s->num('page', 1);      //Second parameter is default value.
+$s->alphanum('missing');
+$s->numList('point');
+$result = $s->make();
 
 access http://example.com/?type=all&point=10,20
 
@@ -39,10 +37,10 @@ array
 
 ### Change the output key.
 ```
-Straw::alphanum('s')->to('search');
-Straw::num('page')->to('condtions.limit');
-Straw::num('min')->to('price.');
-Straw::num('max')->to('price.');
+$s->alphanum('s')->to('search');
+$s->num('page')->to('condtions.limit');
+$s->num('min')->to('price.');
+$s->num('max')->to('price.');
 
 //result
 array
@@ -56,18 +54,18 @@ array
 
 ### Basic rule
 ```
-Straw::alpha    //a-zA-z_
-Straw::num      //0-9
-Straw::alphanum //0-9a-zA-z_
+$s->alpha    //a-zA-z_
+$s->num      //0-9
+$s->alphanum //0-9a-zA-z_
 ```
 
 ### List rule
 ```
-Straw::alphaList    //alpha or alpha,alpha...
-Straw::numList      //num or num,num...
-Straw::alphanumList //alphanum or alphanum,alphanum...
+$s->alphaList    //alpha or alpha,alpha...
+$s->numList      //num or num,num...
+$s->alphanumList //alphanum or alphanum,alphanum...
 
-Straw::numList('values');
+$s->numList('values');
 access http://example.com/?values=1,2,2
 //result
 array
@@ -79,11 +77,11 @@ array
 
 ### Set rule
 ```
-Straw::alphaSet    //alpha or alpha;alpha...
-Straw::numSet      //num or num;num...
-Straw::alphanumSet //alphanum or alphanum;alphanum...
+$s->alphaSet    //alpha or alpha;alpha...
+$s->numSet      //num or num;num...
+$s->alphanumSet //alphanum or alphanum;alphanum...
 
-Straw::numSet('values');
+$s->numSet('values');
 access http://example.com/?values=1;2;3
 //result
 array
@@ -100,11 +98,11 @@ null
 
 ### Range rule
 ```
-Straw::numRange      //1-10
-Straw::datetimeRange //20160101-20160116
+$s->numRange      //1-10
+$s->datetimeRange //20160101-20160116
 
-Straw::numRange('yes');
-Straw::numRange('no');
+$s->numRange('yes');
+$s->numRange('no');
 access http://example.com/?yes=1-10&no=10-1
 //result
 array

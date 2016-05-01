@@ -6,8 +6,13 @@
 
 namespace Straw\Rule;
 
+use Straw\Exceptions\ValidateException;
+
 abstract class Rulable
 {
+    /**
+     * @var string|string[]
+     */
     protected $key;
     protected $default;
 
@@ -16,6 +21,7 @@ abstract class Rulable
 
     protected $to_key;
     protected $format;
+    protected $required;
 
     /**
      * Validate
@@ -48,15 +54,17 @@ abstract class Rulable
      */
     public function __invoke($value)
     {
-        $valid = $this->validate($value);
-        if ($valid === null) {
-            return null;
+        $result = $value;
+        foreach (array(1, 0) as $apply) {
+            $result = ($apply) ? $this->validate($result) : $this->patch($result);
+            if ($result !== null) {
+                continue;
+            }
+            if (! $this->required) {
+                return null;
+            }
+            throw ValidateException::create($this->key, $value);
         }
-        $result = $this->patch($valid);
-        if ($result === null) {
-            return null;
-        }
-
         $key = ($this->to_key) ?: (is_array($this->key) ? implode('', $this->key) : $this->key);
         return array(
             'key'   => $key,
@@ -107,6 +115,18 @@ abstract class Rulable
     public function format($callback)
     {
         $this->format = $callback;
+        return $this;
+    }
+
+    /**
+     * Throw an exception when failed to verification
+     * 
+     * @see Dummy::required
+     * @return $this
+     */
+    public function required()
+    {
+        $this->required = true;
         return $this;
     }
 }

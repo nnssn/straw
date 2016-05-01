@@ -7,6 +7,7 @@
 namespace Straw;
 
 use Straw\Rule\Rulable;
+use Straw\Rule\Dummy;
 use Straw\Rule\Regex;
 use Straw\Rule\Sets;
 
@@ -14,7 +15,7 @@ class Straw
 {
     protected static $configure;
 
-    protected static $dummies = array('regex' => null, 'sets'  => null);
+    protected static $dummy;
 
     /**
      * @var Rulable[]
@@ -34,19 +35,16 @@ class Straw
     protected $complete;
 
     /**
-     * Get dummy Rulable instance
+     * Get Dummy instance
      * 
-     * @param string $name
-     * @return Rulable
+     * @param string|string[] $key
+     * @return Dummy
      */
-    protected static function getDummy($name)
+    protected static function getDummy($key)
     {
-        if (! static::$dummies[$name]) {
-            static::$dummies[$name] = ($name === 'regex')
-                ? Regex::create('duumy', null, Regex::TYPE_NORMAL)
-                : Sets::create('duumy', null, Sets::TYPE_SET, array());
-        }
-        return static::$dummies[$name];
+        return (static::$dummy) 
+            ? static::$dummy->setKey($key)
+            : static::$dummy = Dummy::create($key);
     }
 
     /**
@@ -111,9 +109,9 @@ class Straw
      */
     private function addRegex($key, $default, $type)
     {
-        return ($default || $this->existsSource($key))
+        return ($default !== null || $this->existsSource($key))
             ? $this->register(Regex::create($key, $default, $type))
-            : self::getDummy('regex');;
+            : self::getDummy($key);
     }
 
     /**
@@ -127,9 +125,9 @@ class Straw
      */
     private function addSets($key, $default, $type, array $candidates)
     {
-        return ($default || $this->existsSource($key))
+        return ($default !== null || $this->existsSource($key))
             ? $this->register(Sets::create($key, $default, $type, $candidates))
-            : self::getDummy('sets');
+            : self::getDummy($key);
     }
 
     /**

@@ -43,25 +43,15 @@ class FilterSelector
             ($rule->info('is_datetime')) and ($filters[] = Cast::datetime($rule));
         }
         if ($rule->info('is_number')) {
-            $filters[] = ($is_multiple) ? Check::numberMultiple($rule) : Check::number($rule);
+            $filters[] = Check::inRange($rule);
+            $filters[] = $rule->info('is_decimal') ? Cast::decimal() : Cast::integer();
         }
-
-        $count = count($filters);
-        if (! $count) {
-            return null;
+        $set = array_merge(array_filter($filters));
+        switch (count($set)) {
+            case 0:  return null;
+            case 1:  return $set[0];
+            default: return Cast::mix($set);
         }
-        if ($count === 1) {
-            return $filters[0];
-        }
-        return function ($input) use ($filters) {
-            foreach ($filters as $filter) {
-                $input = $filter($input);
-                if ($input === null) {
-                    return null;
-                }
-            }
-            return $input;
-        };
     }
 
 

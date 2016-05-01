@@ -11,43 +11,27 @@ use Straw\Rule\Rulable;
 class Check
 {
     /**
-     * Check num
+     * Check in a range
      * 
      * @param Rulable $rule
      * @return callable
      */
-    public static function number(Rulable $rule)
+    public static function inRange(Rulable $rule)
     {
         $allow = $rule->info('allow');
+        if (! $allow) {
+            return null;
+        }
         return function ($input) use ($allow) {
-            $value = (int)$input;
-            if (! $allow) {
-                return $value;
+            if (! is_array($input)) {
+                return ($input < $allow[0] || $allow[1] < $input) ? null : $input;
             }
-            return ($value < $allow[0] || $allow[1] < $value) ? null : $value;
-        };
-    }
-
-    /**
-     * Check num multiple
-     * 
-     * @param Rulable $rule
-     * @return callable
-     */
-    public static function numberMultiple(Rulable $rule)
-    {
-        $allow = $rule->info('allow');
-        return function (array $input) use ($allow) {
-            $values = array_map(function ($v) {return (int)$v;}, $input);
-            if (! $allow) {
-                return $values;
-            }
-            foreach ($values as $v) {
+            foreach ($input as $v) {
                 if ($v < $allow[0] || $allow[1] < $v) {
                     return null;
                 }
             }
-            return $values;
+            return $input;
         };
     }
 
@@ -72,12 +56,12 @@ class Check
      * @param string[] $candidates
      * @return array|null
      */
-    public static function set($candidates)
+    public static function set(array $candidates)
     {
-        return function ($input)use ($candidates) {
+        return function ($input) use ($candidates) {
             $flip = array_flip($candidates);
-            foreach ((array)$input as $value) {
-                if (! isset($flip[(string)$value])) {
+            foreach ((array)$input as $v) {
+                if (! isset($flip[(string)$v])) {
                     return null;
                 }
             }
@@ -91,7 +75,7 @@ class Check
      * @param string|string[] $candidates
      * @return string|null
      */
-    public static function enum($candidates)
+    public static function enum(array $candidates)
     {
         return function ($input) use ($candidates) {
             if (! is_string($input) && ! is_numeric($input)) {

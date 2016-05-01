@@ -49,14 +49,10 @@ class Manual
      */
     protected function configure()
     {
-        $this->alpha  = 'a-zA-Z';
-        $this->alnum  = 'a-zA-Z0-9';
-        $this->number = '0-9';
         $this->sub_characters = '_';
-
         $this->list  = ',';
         $this->pair  = ':';
-        $this->range = '-';
+        $this->range = '~'; //tilde
         $this->set   = ';';
     }
 

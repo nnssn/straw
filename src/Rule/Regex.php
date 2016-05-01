@@ -10,22 +10,16 @@ use Straw\Straw;
 
 class Regex extends Rulable
 {
-    const TYPE_NORMAL = 1;
-    const TYPE_LIST   = 2;
-    const TYPE_PAIR   = 3;
-    const TYPE_RANGE  = 4;
+    const TYPE_NORMAL = 'normal';
+    const TYPE_LIST   = 'list';
+    const TYPE_PAIR   = 'pair';
+    const TYPE_RANGE  = 'range';
 
     protected static $formats = array(
         self::TYPE_NORMAL => '/\A:part\z/',
         self::TYPE_LIST   => '/\A(:part:delimiter(?!:delimiter))*:part\z/',
         self::TYPE_PAIR   => '/\A:part:delimiter:part\z/',
         self::TYPE_RANGE  => '/\A(:part){0,1}:delimiter(:part){0,1}\z/',
-    );
-
-    protected static $names = array(
-        self::TYPE_LIST   => 'list',
-        self::TYPE_PAIR   => 'pair',
-        self::TYPE_RANGE  => 'range',
     );
 
     protected $piece;
@@ -36,6 +30,7 @@ class Regex extends Rulable
     protected $allow;
 
     protected $is_number   = false;
+    protected $is_decimal  = false;
     protected $is_datetime = false;
     protected $is_original = false;
 
@@ -70,7 +65,10 @@ class Regex extends Rulable
         if ($rule->is_original && $rule->types(self::TYPE_NORMAL)) {
             return $rule->piece;
         }
-        $core = ($rule->is_number || $rule->is_original)
+        if ($rule->is_number) {
+            return '-{0,1}' . $rule->piece;
+        }
+        $core = ($rule->is_original)
             ? $rule->piece
             : $rule->piece . Straw::getConfigure('sub_characters');
         $repeat = self::makeRepeatPattern($rule->length);
@@ -92,10 +90,7 @@ class Regex extends Rulable
         $rule->default        = $default;
         $rule->type           = $type;
         $rule->pattern_format = self::$formats[$type];
-    
-        $rule->delimiter = ($rule->types(self::TYPE_NORMAL))
-            ? null
-            : Straw::getConfigure(self::$names[$type]);
+        $rule->delimiter      = Straw::getConfigure($type);
         return $rule;
     }
 
@@ -107,7 +102,7 @@ class Regex extends Rulable
      */
     public function alpha($length)
     {
-        $this->piece  = Straw::getConfigure('alpha');
+        $this->piece  = 'a-zA-Z';
         $this->length = $length;
         return $this;
     }
@@ -120,22 +115,37 @@ class Regex extends Rulable
      */
     public function alnum($length)
     {
-        $this->piece  = Straw::getConfigure('alnum');
+        $this->piece  = 'a-zA-Z0-9';
         $this->length = $length;
         return $this;
     }
 
     /**
-     * Set num type
+     * Set integer type
      * 
      * @param array|null $allow
      * @return $this
      */
-    public function number($allow)
+    public function integer($allow)
     {
-        $this->piece     = Straw::getConfigure('number');
+        $this->piece     = '\d+';
         $this->allow     = $allow;
         $this->is_number = true;
+        return $this;
+    }
+
+    /**
+     * Set decimal type
+     * 
+     * @param array|null $allow
+     * @return $this
+     */
+    public function decimal($allow)
+    {
+        $this->piece      = '\d+\.\d+';
+        $this->allow      = $allow;
+        $this->is_number  = true;
+        $this->is_decimal = true;
         return $this;
     }
 
@@ -160,7 +170,7 @@ class Regex extends Rulable
      */
     public function datetime($format)
     {
-        $this->piece           = Straw::getConfigure('alnum');
+        $this->piece           = 'a-zA-Z0-9';
         $this->datetime_format = $format;
         $this->is_datetime     = true;
         return $this;

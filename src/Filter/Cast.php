@@ -11,6 +11,25 @@ use Straw\Rule\Rulable;
 class Cast
 {
     /**
+     * Mix the filter callbacks
+     * 
+     * @param callable[] $filters
+     * @return callable
+     */
+    public static function mix(array $filters)
+    {
+        return function ($input) use ($filters) {
+            foreach ($filters as $filter) {
+                $input = $filter($input);
+                if ($input === null) {
+                    return null;
+                }
+            }
+            return $input;
+        };
+    }
+
+    /**
      * Explode
      * 
      * @param Rulable $rule
@@ -21,6 +40,30 @@ class Cast
         $delimiter = $rule->info('delimiter');
         return function ($input) use ($delimiter) {
             return (is_array($input)) ? $input : explode($delimiter, $input);
+        };
+    }
+
+    /**
+     * Integer
+     * 
+     * @return callable
+     */
+    public static function integer()
+    {
+        return function ($input) {
+            return (is_array($input)) ? array_map('intval', $input) : (int)$input;
+        };
+    }
+
+    /**
+     * Decimal
+     * 
+     * @return callable
+     */
+    public static function decimal()
+    {
+        return function ($input) {
+            return (is_array($input)) ? array_map('floatval', $input) : (float)$input;
         };
     }
 

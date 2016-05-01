@@ -57,7 +57,7 @@ class Straw
      */
     public static function getConfigure($key)
     {
-        return static::$configure[$key];
+        return (isset(static::$configure[$key])) ? static::$configure[$key] : null;
     }
 
     /**
@@ -107,7 +107,7 @@ class Straw
      * @param string|string[] $key
      * @param string|string[] $default
      * @param int $type
-     * @return Regex
+     * @return Rulable
      */
     private function addRegex($key, $default, $type)
     {
@@ -123,7 +123,7 @@ class Straw
      * @param string|string[] $default
      * @param int $type
      * @param array $candidates
-     * @return Sets
+     * @return Rulable
      */
     private function addSets($key, $default, $type, array $candidates)
     {
@@ -231,24 +231,12 @@ class Straw
     }
 
     /**
-     * Add bool rule
-     * 
-     * @param string $key
-     * @param string|null $default
-     * @return Regex
-     */
-    public function bool($key, $default = null)
-    {
-        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->number(null)->original('(0|1)');
-    }
-
-    /**
      * Add alpha rule
      * 
      * @param string $key
      * @param string|null $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alpha($key, $default = null, $length = null)
     {
@@ -261,7 +249,7 @@ class Straw
      * @param string $key
      * @param string|null $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alnum($key, $default = null, $length = null)
     {
@@ -269,16 +257,29 @@ class Straw
     }
 
     /**
-     * Add numeric rule
+     * Add integer rule
      * 
      * @param string $key
      * @param string|null $default
      * @param array $allow
-     * @return Regex
+     * @return Rulable
      */
-    public function number($key, $default = null, array $allow = array())
+    public function integer($key, $default = null, array $allow = array())
     {
-        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->number($allow);
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->integer($allow);
+    }
+
+    /**
+     * Add decimal rule
+     * 
+     * @param string $key
+     * @param string|null $default
+     * @param array $allow
+     * @return Rulable
+     */
+    public function decimal($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_NORMAL)->decimal($allow);
     }
 
     /**
@@ -287,7 +288,7 @@ class Straw
      * @param string $key
      * @param string|null $default
      * @param string $piece
-     * @return Regex
+     * @return Rulable
      */
     public function original($key, $default, $piece)
     {
@@ -300,7 +301,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alphaList($key, $default = null, $length = null)
     {
@@ -313,7 +314,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alnumList($key, $default = null, $length = null)
     {
@@ -321,16 +322,29 @@ class Straw
     }
 
     /**
-     * Add numeric list rule
+     * Add integer list rule
      * 
      * @param string|string[] $key
      * @param mixed $default
      * @param array $allow
-     * @return Regex
+     * @return Rulable
      */
-    public function numberList($key, $default = null, array $allow = array())
+    public function integerList($key, $default = null, array $allow = array())
     {
-        return $this->addRegex($key, $default, Regex::TYPE_LIST)->number($allow);
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->integer($allow);
+    }
+
+    /**
+     * Add decimal list rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param array $allow
+     * @return Rulable
+     */
+    public function decimalList($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_LIST)->decimal($allow);
     }
 
     /**
@@ -339,7 +353,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param string $piece
-     * @return Regex
+     * @return Rulable
      */
     public function originalList($key, $default, $piece)
     {
@@ -352,7 +366,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alphaPair($key, $default = null, $length = null)
     {
@@ -365,7 +379,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param mixed $length
-     * @return Regex
+     * @return Rulable
      */
     public function alnumPair($key, $default = null, $length = null)
     {
@@ -378,11 +392,24 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param array $allow
-     * @return Regex
+     * @return Rulable
      */
-    public function numberPair($key, $default = null, array $allow = array())
+    public function integerPair($key, $default = null, array $allow = array())
     {
-        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->number($allow);
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->integer($allow);
+    }
+
+    /**
+     * Add decimal pair rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param array $allow
+     * @return Rulable
+     */
+    public function decimalPair($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_PAIR)->decimal($allow);
     }
 
     /**
@@ -391,7 +418,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param string $piece
-     * @return Regex
+     * @return Rulable
      */
     public function originalPair($key, $default, $piece)
     {
@@ -404,11 +431,24 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param array $allow
-     * @return Regex
+     * @return Rulable
      */
-    public function numberRange($key, $default = null, array $allow = array())
+    public function integerRange($key, $default = null, array $allow = array())
     {
-        return $this->addRegex($key, $default, Regex::TYPE_RANGE)->number($allow);
+        return $this->addRegex($key, $default, Regex::TYPE_RANGE)->integer($allow);
+    }
+
+    /**
+     * Add num decimal rule
+     * 
+     * @param string|string[] $key
+     * @param mixed $default
+     * @param array $allow
+     * @return Rulable
+     */
+    public function decimalRange($key, $default = null, array $allow = array())
+    {
+        return $this->addRegex($key, $default, Regex::TYPE_RANGE)->decimal($allow);
     }
 
     /**
@@ -417,11 +457,28 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param string $format
-     * @return Regex
+     * @return Rulable
      */
     public function datetimeRange($key, $default = null, $format = 'Ymd')
     {
         return $this->addRegex($key, $default, Regex::TYPE_RANGE)->datetime($format);
+    }
+
+    /**
+     * Add bool rule
+     * 
+     * @param string $key
+     * @param string|null $default
+     * @param array $candidates
+     * @return Rulable
+     * @throws \InvalidArgumentException
+     */
+    public function bool($key, $default = null, array $candidates = array(0, 1))
+    {
+        if (count($candidates) !== 2) {
+            throw new \InvalidArgumentException();
+        }
+        return $this->addSets($key, $default, Sets::TYPE_ENUM, $candidates);
     }
 
     /**
@@ -430,7 +487,7 @@ class Straw
      * @param string|string[] $key
      * @param mixed $default
      * @param array $candidates
-     * @return Sets
+     * @return Rulable
      */
     public function set($key, $default, array $candidates)
     {
@@ -443,7 +500,7 @@ class Straw
      * @param string $key
      * @param string|null $default
      * @param array $candidates
-     * @return Sets
+     * @return Rulable
      */
     public function enum($key, $default, array $candidates)
     {
